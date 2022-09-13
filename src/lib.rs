@@ -1,21 +1,24 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, Vector, UnorderedMap};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::json_types::{U64, U128};
-use near_sdk::{near_bindgen, require, Promise, AccountId, PublicKey, BorshStorageKey};
-use std::hash::{Hash};
+use near_sdk::json_types::{U128};
+use near_sdk::{env, near_bindgen, require, Promise, AccountId, PublicKey, BorshStorageKey};
+use std::hash::{Hash, Hasher};
+use std::collections::hash_map::DefaultHasher;
 
 //pub use crate::external::*;
 pub use crate::permissions::*;
-pub use crate::marketplace::*;
+pub use crate::listings::*;
+pub use crate::offers::*;
 
 //mod external;
 mod permissions;
-mod marketplace;
+mod listings;
+mod offers;
 
 pub type TokenId = String;
 pub type Signature = String;
-pub type ListingId = u64;
+pub type ListingId = String;
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Hash)]
 #[serde(crate = "near_sdk::serde")]
@@ -117,8 +120,8 @@ impl Default for Contract {
             //oracle_account_id: "oracle_contract".parse().unwrap(),
             contract_metadata: SBTPermissionsContractMetadata {
                 spec: "sbt-permissions-0.0.1".to_string(),
-                name: None,
-                symbol: None,
+                name: Some("sbt-marketplace-nearcon".parse().unwrap()),
+                symbol: Some("NCMP".parse().unwrap()),
                 base_uri: None,
                 reference: None,
             },
