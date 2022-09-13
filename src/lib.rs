@@ -65,7 +65,7 @@ pub struct SBTListing {
     pub id: ListingId,
     pub account_id: AccountId,
     pub tokens: Vec<SBTTokenLocator>,
-    pub price: Option<u128>
+    pub price: Option<U128>
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -73,7 +73,7 @@ pub struct SBTListing {
 pub struct SBTListingOffer {
     pub listing_id: ListingId,
     pub offering_account_id: AccountId,
-    pub offered_price: Option<u128>
+    pub offered_price: Option<U128>
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]

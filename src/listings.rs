@@ -33,10 +33,7 @@ impl SBTMarketplaceListings for Contract {
             id: id.clone(),
             account_id: account_id.clone(),
             tokens: tokens.clone(),
-            price: match price {
-                Some(p) => Some(u128::from(p)),
-                None => None
-            }
+            price: price.clone()
         };
 
         self.listings_by_id.insert(&id.clone(), &listing);

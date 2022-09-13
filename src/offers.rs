@@ -5,6 +5,8 @@ use crate::*;
 trait SBTMarketplaceOffers {
     fn add_offer(&mut self, listing_id: ListingId);
 
+    fn view_offers(&self, offering_account_id: AccountId) -> Vec<SBTListingOffer>;
+
     fn accept_offer(&mut self, listing_id: ListingId, permission: SBTPermission);
 }
 
@@ -35,7 +37,7 @@ impl SBTMarketplaceOffers for Contract {
             listing_id: listing_id.clone(),
             offering_account_id: offering_account.clone(),
             offered_price: {
-                if *offered_price > 0 { Some(offered_price.clone()) } else { None }
+                if *offered_price > 0 { Some(U128(offered_price.clone())) } else { None }
             }
         };
 
@@ -45,6 +47,13 @@ impl SBTMarketplaceOffers for Contract {
             .unwrap_or(UnorderedMap::new(StorageKey::OffersForAccount{account_id: offering_account.clone()}));
         account_offers.insert(&listing_id, &offer);
         self.offers_for_account.insert(&offering_account, &account_offers);
+    }
+
+    fn view_offers(&self, offering_account_id: AccountId) -> Vec<SBTListingOffer> {
+        return self.offers_for_account
+            .get(&offering_account_id)
+            .unwrap_or(UnorderedMap::new(StorageKey::OffersByAccount))
+            .values().collect();
     }
 
     fn accept_offer(&mut self, listing_id: ListingId, permission: SBTPermission) {
@@ -76,7 +85,8 @@ impl SBTMarketplaceOffers for Contract {
             .get(&offer.offering_account_id)
             .unwrap()
             .remove(&id);
-        if let Some(ref price) = offer.offered_price {
+        if let Some(ref price_json) = offer.offered_price {
+            let price = u128::from(*price_json);
             // 80% of tx to owner
             let owner_amount = price * 8 / 10;
             let providers: Vec<AccountId> = listing.tokens.iter().map(|l| l.sbt_contract_id.clone()).collect();
