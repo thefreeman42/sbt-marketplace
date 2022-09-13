@@ -1,8 +1,9 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, Vector, UnorderedMap};
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::json_types::{U128};
-use near_sdk::{near_bindgen, AccountId, PublicKey, BorshStorageKey};
+use near_sdk::json_types::{U64, U128};
+use near_sdk::{near_bindgen, require, Promise, AccountId, PublicKey, BorshStorageKey};
+use std::hash::{Hash};
 
 pub use crate::external::*;
 pub use crate::permissions::*;
@@ -14,9 +15,9 @@ mod marketplace;
 
 pub type TokenId = String;
 pub type Signature = String;
-pub type ListingId = String;
+pub type ListingId = u64;
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Hash)]
 #[serde(crate = "near_sdk::serde")]
 pub struct SBTTokenLocator {
     pub chain_id: String,
@@ -61,7 +62,15 @@ pub struct SBTListing {
     pub id: ListingId,
     pub account_id: AccountId,
     pub tokens: Vec<SBTTokenLocator>,
-    pub price: Option<U128>
+    pub price: Option<u128>
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct SBTListingOffer {
+    pub listing_id: ListingId,
+    pub offering_account_id: AccountId,
+    pub offered_price: Option<u128>
 }
 
 #[derive(BorshSerialize, BorshStorageKey)]
@@ -81,6 +90,10 @@ enum StorageKey {
     ListingsByAccount,
     ListingsForAccount {
         account_id: AccountId
+    },
+    OffersByAccount,
+    OffersForAccount {
+        account_id: AccountId
     }
 }
 
@@ -93,6 +106,7 @@ pub struct Contract {
     permissions_for_token: LookupMap<(String, AccountId), LookupMap<TokenId, Vector<Signature>>>,
     listings_by_id: UnorderedMap<ListingId, SBTListing>,
     listings_for_account: LookupMap<AccountId, Vector<ListingId>>,
+    offers_for_account: LookupMap<AccountId, UnorderedMap<ListingId, SBTListingOffer>>
 }
 
 impl Default for Contract {
@@ -110,6 +124,7 @@ impl Default for Contract {
             permissions_for_token: LookupMap::new(StorageKey::PermissionsForToken),
             listings_by_id: UnorderedMap::new(StorageKey::ListingsById),
             listings_for_account: LookupMap::new(StorageKey::ListingsByAccount),
+            offers_for_account: LookupMap::new(StorageKey::OffersByAccount),
         }
     }
 }
@@ -126,6 +141,7 @@ impl Contract {
             permissions_for_token: LookupMap::new(StorageKey::PermissionsForToken),
             listings_by_id: UnorderedMap::new(StorageKey::ListingsById),
             listings_for_account: LookupMap::new(StorageKey::ListingsByAccount),
+            offers_for_account: LookupMap::new(StorageKey::OffersByAccount),
         }
     }
 }

@@ -1,5 +1,3 @@
-use near_sdk::collections::{LookupMap, Vector};
-use near_sdk::{near_bindgen, require};
 use crate::*;
 
 #[near_bindgen]
