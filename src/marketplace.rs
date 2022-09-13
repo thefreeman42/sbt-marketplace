@@ -104,6 +104,7 @@ impl Contract {
         };
 
         require!(permission.body.accounts.len() > 0, "At least 1 account must be given permission");
+        // TODO: handle accepting multiple offers at the same time
         require!(permission.body.accounts.len() == 1, "WIP: Only 1 offer can be accepted");
 
         let offering_account = permission.body.accounts[0].clone();

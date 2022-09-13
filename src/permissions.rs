@@ -76,12 +76,9 @@ impl Contract {
         self.sbt_permissions_impl(token).len() as u64
     }
 
-    // pub fn sbt_permissions_for_account(&self, account_id: AccountId, from_index: u64, limit: Option<u64>) -> Vec<SBT> {}
-    // pub fn sbt_permissions_count_for_account(&self, account_id: AccountId) -> u64 {}
-
     fn verify_permission(&self, _permission: &SBTPermission) {
-        // TODO: permission.body to json
-        // Validate signature with json
+        // TODO: cross-contract call oracle to verify signature
+        //       and that permission body is matching it
     }
 
     pub fn create_permission(&mut self, permission: SBTPermission) {

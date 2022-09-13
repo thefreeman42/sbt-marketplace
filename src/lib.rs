@@ -5,11 +5,11 @@ use near_sdk::json_types::{U64, U128};
 use near_sdk::{near_bindgen, require, Promise, AccountId, PublicKey, BorshStorageKey};
 use std::hash::{Hash};
 
-pub use crate::external::*;
+//pub use crate::external::*;
 pub use crate::permissions::*;
 pub use crate::marketplace::*;
 
-mod external;
+//mod external;
 mod permissions;
 mod marketplace;
 
@@ -42,18 +42,18 @@ pub struct PermissionBody {
 #[serde(crate = "near_sdk::serde")]
 pub struct SBTPermission {
     pub body: PermissionBody,
-    pub signature: Signature,      // The signature generated when signing a JSONified representation of body
-    pub public_key: PublicKey,     // The key used to sign the body
+    pub signature: Signature,
+    pub public_key: PublicKey,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct SBTPermissionsContractMetadata {
-    pub spec: String,              // SBT specification (sbt-permissions-1.0.0)
-    pub name: Option<String>,      // The name of the SBT permissions provider
-    pub symbol: Option<String>,    // The symbol of the SBT permissions provider
-    pub base_uri: Option<String>,  // Base uri for the SBT permissions server
-    pub reference: Option<String>, // Any additional info for the SBT permissions provider
+    pub spec: String,
+    pub name: Option<String>,
+    pub symbol: Option<String>,
+    pub base_uri: Option<String>,
+    pub reference: Option<String>,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
@@ -101,6 +101,7 @@ enum StorageKey {
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Contract {
     contract_metadata: SBTPermissionsContractMetadata,
+    //oracle_account_id: AccountId,
     owner_id: AccountId,
     permissions_by_signature: LookupMap<Signature, SBTPermission>,
     permissions_for_token: LookupMap<(String, AccountId), LookupMap<TokenId, Vector<Signature>>>,
@@ -113,6 +114,7 @@ impl Default for Contract {
     fn default() -> Self {
         Self {
             owner_id: "default".parse().unwrap(),
+            //oracle_account_id: "oracle_contract".parse().unwrap(),
             contract_metadata: SBTPermissionsContractMetadata {
                 spec: "sbt-permissions-0.0.1".to_string(),
                 name: None,
@@ -132,10 +134,14 @@ impl Default for Contract {
 #[near_bindgen]
 impl Contract {
     #[init]
-    pub fn new(owner_id: AccountId, metadata: SBTPermissionsContractMetadata) -> Self {
-        // TODO: verify spec
+    pub fn new(
+        owner_id: AccountId,
+        //oracle_account_id: AccountId,
+        metadata: SBTPermissionsContractMetadata
+    ) -> Self {
         Self {
             owner_id: owner_id,
+            //oracle_account_id: oracle_account_id,
             contract_metadata: metadata,
             permissions_by_signature: LookupMap::new(StorageKey::PermissionsBySignature),
             permissions_for_token: LookupMap::new(StorageKey::PermissionsForToken),
