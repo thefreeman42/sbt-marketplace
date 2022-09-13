@@ -1,5 +1,7 @@
 use crate::*;
 
+// TODO: update/remove offer
+
 trait SBTMarketplaceOffers {
     fn add_offer(&mut self, listing_id: ListingId);
 

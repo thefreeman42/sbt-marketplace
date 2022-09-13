@@ -1,5 +1,7 @@
 use crate::*;
 
+// TODO: update/remove listing
+
 trait SBTMarketplaceListings {
     fn view_listings(&self) -> Vec<SBTListing>;
 
