@@ -75,13 +75,16 @@ impl SBTMarketplaceOffers for Contract {
             .unwrap()
             .remove(&id);
         if let Some(ref price) = offer.offered_price {
+            // 80% of tx to owner
             let owner_amount = price * 8 / 10;
             let providers: Vec<AccountId> = listing.tokens.iter().map(|l| l.sbt_contract_id.clone()).collect();
-            let provider_amount = price * 2 / 10 / (providers.len() as u128);
+            // 15% of tx to the providers of each token, split evenly
+            let provider_amount = price * 3 / 20 / (providers.len() as u128);
             for provider in providers.iter() {
                 Promise::new(provider.clone()).transfer(provider_amount);
             }
             Promise::new(listing.account_id).transfer(owner_amount);
+            // 5% of tx remains as marketplace fee
         }
     }
 }
