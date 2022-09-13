@@ -71,6 +71,7 @@ impl Contract {
         assert!(env::signer_account_id() == self.owner_id, "Only the oracle can call this");
         let queue_size = self.request_queue.len();
         assert!(queue_size > 0, "No items in the queue");
+        // TODO: This needs to be FIFO
         let request = self.request_queue.get(queue_size - 1).unwrap();
         let (applied_account_id, applied_public_key) = action;
         assert!(
