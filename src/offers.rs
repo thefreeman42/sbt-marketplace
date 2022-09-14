@@ -5,7 +5,7 @@ use crate::*;
 trait SBTMarketplaceOffers {
     fn add_offer(&mut self, listing_id: ListingId);
 
-    fn view_offers(&self, offering_account_id: AccountId) -> Vec<SBTListingOffer>;
+    fn view_offers(&self, account_id: AccountId) -> Vec<SBTListingOffer>;
 
     fn accept_offer(&mut self, listing_id: ListingId, permission: SBTPermission);
 }
@@ -20,8 +20,8 @@ impl SBTMarketplaceOffers for Contract {
 
         let offering_account = &env::predecessor_account_id();
         require!(listing.account_id != *offering_account, "Cannot submit offer for own listing");
-        if let Some(ref all_listings_by_offering_account) = self.offers_for_account.get(&offering_account) {
-            if let Some(ref _previous_offer) = all_listings_by_offering_account.get(&listing_id) {
+        if let Some(ref all_listings_by_offering_account) = self.offers_by_account.get(&offering_account) {
+            if all_listings_by_offering_account.contains(&listing_id) {
                 panic!("There is an offer in place for this listing by this account");
             }
         }
@@ -41,19 +41,27 @@ impl SBTMarketplaceOffers for Contract {
             }
         };
 
+        self.offers_by_id.insert(&(listing_id.clone(), offering_account.clone()), &offer);
         let mut account_offers = self
-            .offers_for_account
+            .offers_by_account
             .get(&offering_account)
-            .unwrap_or(UnorderedMap::new(StorageKey::OffersForAccount{account_id: offering_account.clone()}));
-        account_offers.insert(&listing_id, &offer);
-        self.offers_for_account.insert(&offering_account, &account_offers);
+            .unwrap_or(UnorderedSet::new(StorageKey::OffersByAccountListing{account_id: offering_account.clone()}));
+        account_offers.insert(&listing_id);
+        self.offers_by_account.insert(&offering_account, &account_offers);
+        let mut offers_for_account = self
+            .offers_for_account
+            .get(&listing.account_id)
+            .unwrap_or(UnorderedSet::new(StorageKey::OffersForAccountOffers{account_id: listing.account_id.clone()}));
+        offers_for_account.insert(&(listing_id.clone(), offering_account.clone()));
+        self.offers_for_account.insert(&listing.account_id, &offers_for_account);
     }
 
-    fn view_offers(&self, offering_account_id: AccountId) -> Vec<SBTListingOffer> {
-        return self.offers_for_account
-            .get(&offering_account_id)
-            .unwrap_or(UnorderedMap::new(StorageKey::OffersByAccount))
-            .values().collect();
+    fn view_offers(&self, account_id: AccountId) -> Vec<SBTListingOffer> {
+        let offer_keys = self.offers_for_account
+            .get(&account_id)
+            .unwrap_or(UnorderedSet::new(StorageKey::OffersForAccount))
+            .to_vec();
+        offer_keys.iter().map(|key| self.offers_by_id.get(&key).unwrap()).collect()
     }
 
     fn accept_offer(&mut self, listing_id: ListingId, permission: SBTPermission) {
@@ -72,19 +80,18 @@ impl SBTMarketplaceOffers for Contract {
 
         let offering_account = permission.body.accounts[0].clone();
         let offer : SBTListingOffer = {
-            let acc_offers = self.offers_for_account.get(&offering_account);
+            let acc_offers = self.offers_by_account.get(&offering_account);
             require!(acc_offers.is_some(), "Account does not have offers on this contract");
             let acc_list_offers = acc_offers.unwrap();
-            require!(acc_list_offers.get(&id).is_some(), "Offer does not exist");
-            acc_list_offers.get(&id).unwrap()
+            require!(acc_list_offers.contains(&id), "Offer does not exist");
+            self.offers_by_id.get(&(id.clone(), offering_account.clone())).unwrap()
         };
 
         self.create_permission(permission);
 
-        self.offers_for_account
-            .get(&offer.offering_account_id)
-            .unwrap()
-            .remove(&id);
+        self.offers_by_id.remove(&(id.clone(), offering_account.clone()));
+        // TODO remove offers correctly from everywhere
+
         if let Some(ref price_json) = offer.offered_price {
             let price = u128::from(*price_json);
             // 80% of tx to owner
